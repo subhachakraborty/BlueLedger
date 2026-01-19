@@ -1,3 +1,3 @@
 # Architecute
 
-[Architecute](./assets/images/architecture.svg)
+![Architecute](./assets/images/architecture.svg)
