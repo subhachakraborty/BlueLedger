@@ -6,26 +6,21 @@ import { User } from "./db";
 import multer from "multer";
 import path from "path";
 import { fileURLToPath } from "url";
+import * as config from "./config.json";
 
-const upload = multer({ dest: 'uploads/' })
-// const __filename = fileURLToPath(import.meta.url);
-// const dirname = path.dirname(__filename);
-
-// const filePath = "../uploads/"
-// const filename = path.basename(filePath)
-
+// -- Server Config
+const app = express();
+const PORT = 8000;
 dotenv.config({ path: './.env' })
 
-// Console: https://play.min.io:9443/
-const minioClient = new Minio.Client({
-    endPoint: 'play.min.io',
-    port: 9000,
-    useSSL: true,
-    accessKey: 'Q3AM3UQ867SPQQA43P2F',
-    secretKey: 'zuf+tfteSlswRu7BJ86wekitnifILbZam1KYY3TG',
-})
 
+// -- Middleware --
+app.use(express.json())
+
+
+// -- Multer Client
 // set up multer storage
+const upload = multer({ dest: 'uploads/' })
 const storage = multer.diskStorage({
     destination: function (req, file, cb) {
         cb(null, '/uploads')
@@ -35,13 +30,20 @@ const storage = multer.diskStorage({
     }
 });
 
-const app = express();
-const PORT = 8000;
+// -- Minio Client
+// Console: https://play.min.io:9443/
+const bucket = "blue-ledger-objects";
+const minioClient = new Minio.Client({
+    endPoint: 'play.min.io',
+    port: 9000,
+    useSSL: true,
+    accessKey: 'Q3AM3UQ867SPQQA43P2F',
+    secretKey: 'zuf+tfteSlswRu7BJ86wekitnifILbZam1KYY3TG',
+})
+
+
+//  -- Database connection
 let DB_URL: string | undefined = process.env.DATABASE_URL;
-
-// -- Middleware --
-app.use(express.json())
-
 if (DB_URL == undefined) {
     DB_URL = "mongodb://localhost:27017/testDB";
 }
@@ -58,11 +60,6 @@ try {
     console.log(err)
 }
 
-// app.get("/", (req, res) => {
-//     res.json({
-//         "message": "Testing"
-//     });
-// });
 
 app.post("/test", async (req, res) => {
     const username = req.body.username;
@@ -93,7 +90,6 @@ app.get("/", (req, res) => {
              `);
 });
 
-const bucket = "blue-ledger-objects";
 
 app.post("/upload/images", upload.single('uploadedFile'), async (req, res) => {
     console.log(req.file); // Contains file info
@@ -122,6 +118,6 @@ app.post("/upload/images", upload.single('uploadedFile'), async (req, res) => {
     }
 });
 
-app.listen(PORT, () => {
+app.listen(config.PORT, () => {
     console.log(`Server is listening on http://localhost:${PORT}`);
 })
