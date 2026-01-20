@@ -10,7 +10,6 @@ import * as config from "./config.json";
 
 // -- Server Config
 const app = express();
-const PORT = 8000;
 dotenv.config({ path: './.env' })
 
 
@@ -30,6 +29,7 @@ const storage = multer.diskStorage({
     }
 });
 
+
 // -- Minio Client
 // Console: https://play.min.io:9443/
 const bucket = "blue-ledger-objects";
@@ -42,23 +42,25 @@ const minioClient = new Minio.Client({
 })
 
 
-//  -- Database connection
+//  -- Database Configuration
 let DB_URL: string | undefined = process.env.DATABASE_URL;
+// -- Override if there is no .env file | no url in .env
 if (DB_URL == undefined) {
-    DB_URL = "mongodb://localhost:27017/testDB";
+    DB_URL = config.DB_URL;
 }
 
 async function connectDB(conn_string: string) {
     // 3. Connect to MongoDB
-    await connect(conn_string)
+    try {
+        await connect(conn_string)
+        console.log("Database connection is successful")
+    } catch(err) {
+        console.error("Database connection issue: ", err);
+    }
 }
 
-try {
-    connectDB(DB_URL);
-    console.log("Database connection is successful")
-} catch(err) {
-    console.log(err)
-}
+// -- Connect to the DB
+connectDB(DB_URL);
 
 
 app.post("/test", async (req, res) => {
@@ -82,12 +84,12 @@ app.post("/test", async (req, res) => {
 
 app.get("/", (req, res) => {
     res.send(`
-             <h1>File Upload Demo</h1>
-             <form action="/upload/images" method="post" enctype="multipart/form-data">
-             <input type="file" name="uploadedFile" />
-             <button type="submit">Upload</button>
-             </form>
-             `);
+        <h1>File Upload Demo</h1>
+        <form action="/upload/images" method="post" enctype="multipart/form-data">
+            <input type="file" name="uploadedFile" />
+            <button type="submit">Upload</button>
+        </form>
+    `);
 });
 
 
@@ -118,6 +120,7 @@ app.post("/upload/images", upload.single('uploadedFile'), async (req, res) => {
     }
 });
 
+
 app.listen(config.PORT, () => {
-    console.log(`Server is listening on http://localhost:${PORT}`);
+    console.log(`Server is listening on http://localhost:${config.PORT}`);
 })
