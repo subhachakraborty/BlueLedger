@@ -1,6 +1,6 @@
-import { Schema, model, connect } from 'mongoose';
+import { Schema, model, connect, Types } from 'mongoose';
 
-interface IUser {
+export interface IUser {
     username: string;
     email: string;
     password: string;
@@ -10,7 +10,7 @@ interface IUser {
     updatedAt?: Date;
 }
 
-interface IPost {
+export interface IPost {
     title: string;
     description: string;
 
@@ -54,7 +54,7 @@ const UserSchema = new Schema<IUser>({
     //     enum: ["user", "admin"],
     //     default: "user"
     // }
-}, { timestamp: true });
+});
 
 const PostSchema = new Schema<IPost>({
     title: {
@@ -62,7 +62,7 @@ const PostSchema = new Schema<IPost>({
         required: true,
     },
     description: {
-        type: String
+        type: String,
         required: true,
     },
     imageKey: {
@@ -85,7 +85,7 @@ const PostSchema = new Schema<IPost>({
         required: true,
         index: true,
     }
-}, { timestamp: true });
+});
 
 const User = model<IUser>("User", UserSchema);
 const Post = model<IPost>("Post", PostSchema);

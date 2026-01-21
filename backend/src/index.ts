@@ -1,14 +1,13 @@
 import express from "express";
 import { Schema, model, connect } from 'mongoose';
 import dotenv from 'dotenv'
-import * as Minio from 'minio'
-import { User } from "./db";
 import multer from "multer";
 import multerS3 from "multer-s3";
 import { S3Client } from "@aws-sdk/client-s3";
 import path from "path";
-import { fileURLToPath } from "url";
+// import { fileURLToPath } from "url";
 import * as config from "./config.json";
+import { User, Post } from "./model";
 
 // -- Server Config
 const app = express();
@@ -20,8 +19,8 @@ app.use(express.json())
 
 // -- Multer Client with aws s3
 // set up multer storage
-let accessKeyId = process.env.ACCESS_KEY_ID;
-let secretAccessKey = process.env.SECRET_ACCESS_KEY;
+const accessKeyId = process.env.ACCESS_KEY_ID;
+const secretAccessKey = process.env.SECRET_ACCESS_KEY;
 if (!accessKeyId || !secretAccessKey) {
     throw new Error("AWS Credentials missing. Please check your .env file.");
 }
@@ -75,11 +74,13 @@ connectDB(DB_URL);
 
 app.post("/test", async (req, res) => {
     const username = req.body.username;
+    const email = req.body.email;
     const password = req.body.password;
 
     const user = new User({
         username,
-        password
+        email,
+        password,
     });
     try {
         const response = await user.save();

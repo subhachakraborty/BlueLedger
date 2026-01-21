@@ -1,1 +1,1 @@
-{"root":["./src/db.ts","./src/index.ts","./src/services/aws.ts"],"errors":true,"version":"5.9.3"}
+{"root":["./src/index.ts","./src/model.ts","./src/services/aws.ts"],"version":"5.9.3"}
