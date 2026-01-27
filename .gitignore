@@ -3,3 +3,8 @@ node_modules/
 dist/
 target/
 uploads/
+
+venv/
+.venv/
+
+*.tif
