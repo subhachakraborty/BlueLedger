@@ -1,12 +1,10 @@
 # Architecute
 
+### First Draft
 ![Architecute](./assets/images/architecture.svg)
 
----
-
-## Require Fix
-- [x] Multer file upload name in the upload/ dir
-- [x] Not getting preSigned url from minio so fallback to aws s3 bucket
+### Secode Draft
+![Architecute](./assets/images/architecture_update.png)
 
 ---
 
