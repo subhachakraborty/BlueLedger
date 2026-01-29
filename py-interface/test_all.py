@@ -6,7 +6,8 @@ from rasterio.crs import CRS
 from rasterio.warp import calculate_default_transform, reproject, Resampling
 from rasterio.mask import mask
 from pyproj import CRS as PyCRS
-
+from dotenv import load_dotenv
+import os
 from sentinelhub import (
     SHConfig,
     SentinelHubRequest,
@@ -16,8 +17,11 @@ from sentinelhub import (
 )
 
 
-CLIENT_ID = ""
-CLIENT_SECRET = ""
+# load environ vars
+load_dotenv()
+
+CLIENT_ID = os.getenv("CLIENT_ID")
+CLIENT_SECRET = os.getenv("CLIENT_SECRET")
 
 GEOJSON_FILE = "aoi2.geojson"
 

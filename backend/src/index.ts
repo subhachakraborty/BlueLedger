@@ -8,7 +8,7 @@ import path from "path";
 // import { fileURLToPath } from "url";
 import * as config from "./config.json";
 import { User, Post } from "./model";
-
+import * from "./"
 // -- Server Config
 const app = express();
 dotenv.config({ path: './.env', quiet: true })
@@ -71,30 +71,6 @@ async function connectDB(conn_string: string) {
 // -- Connect to the DB
 connectDB(DB_URL);
 
-
-app.post("/test", async (req, res) => {
-    const username = req.body.username;
-    const email = req.body.email;
-    const password = req.body.password;
-
-    const user = new User({
-        username,
-        email,
-        password,
-    });
-
-    try {
-        const response = await user.save();
-        res.json({
-            "message": "Saved successful",
-            "id": response._id,
-        })
-    } catch(err) {
-        console.log("Submission did not happen");
-    }
-});
-
-
 app.get("/single-upload", (req, res) => {
     res.send(`
         <h1>File Upload Demo</h1>
@@ -127,17 +103,6 @@ app.get("/multiple-upload", (req, res) => {
     `);
 });
 
-
-// test
-// app.post('/upload/single/image', upload.single("uploadedFile"), async(req, res) => {
-//     console.log(req.file);
-// });
-
-// app.post('/upload/multiple/image', upload.array("uploadedFile", 2), async(req, res) => {
-//     // remember there is req.files to get access of array of uploaded files
-//     console.log(req.files);
-// });
-
 app.post("/upload/multiple/image", upload.array('uploadedFile', 2), async (req, res) => {
     try {
 
@@ -148,23 +113,6 @@ app.post("/upload/multiple/image", upload.array('uploadedFile', 2), async (req, 
                 error: "No file uploaded",
             })
         }
-
-        // if (req.file != undefined) {
-        //     // filename
-        //     const sourceFileName = req.file.originalname;
-        //     // file path
-        //     const sourceFilePath = req.file.path;
-        //     res.send(`File uploaded successfully: ${req.file.originalname}`);
-        // }
-        // else {
-        //     res.send("Error while uploading images")
-        // }
-
-        // const user = new User({
-        //     username: req.body.username,
-        //     email: req.body.email,
-        //     password: req.body.password,
-        // });
 
         const post = new Post({
             title: req.body.title,
@@ -177,6 +125,8 @@ app.post("/upload/multiple/image", upload.array('uploadedFile', 2), async (req, 
                     size: file.size,
                 }
             }),
+
+            // has to fix this Point should be numeric but got object error
             locations: (() => {
                 let geojson = req.body.geojson;
 
@@ -225,14 +175,6 @@ app.post("/upload/multiple/image", upload.array('uploadedFile', 2), async (req, 
     }
 });
 
-// test => expect geojson data 
-app.post("/location", (req, res) => {
-    const location = req.body;
-    res.status(200).json({
-        message: "success",
-        data: location
-    })
-});
 
 app.listen(config.PORT, () => {
     console.log(`Server is listening on http://localhost:${config.PORT}`);
