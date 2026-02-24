@@ -34,7 +34,7 @@ def health():
 def run_pipeline():
     """
     Accept GeoJSON input, run the carbon credit pipeline, and return results.
-    
+
     Returns:
         - log_file: Path to API execution log
         - carbon_credit_report: Path to the generated report
@@ -80,16 +80,20 @@ def run_pipeline():
     # 4. Return response
     report_path = OUTPUTS_DIR / "carbon_credit_report.txt"
 
-    return jsonify({
-        "success": proc.returncode == 0,
-        "exit_code": proc.returncode,
-        "files": {
-            "log_file": str(log_file),
-            "carbon_credit_report": str(report_path) if report_path.exists() else None,
-            "summary_json": str(summary_path),
-        },
-        "summary": summary,
-    })
+    return jsonify(
+        {
+            "success": proc.returncode == 0,
+            "exit_code": proc.returncode,
+            "files": {
+                "log_file": str(log_file),
+                "carbon_credit_report": (
+                    str(report_path) if report_path.exists() else None
+                ),
+                "summary_json": str(summary_path),
+            },
+            "summary": summary,
+        }
+    )
 
 
 def _extract_summary():
@@ -162,7 +166,9 @@ def _parse_report(text):
 
         if line.startswith("Total Area:"):
             try:
-                summary["TOTAL_AREA"] = float(line.split(":")[1].split("hectares")[0].strip())
+                summary["TOTAL_AREA"] = float(
+                    line.split(":")[1].split("hectares")[0].strip()
+                )
             except ValueError:
                 pass
 
