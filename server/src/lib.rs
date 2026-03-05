@@ -9,6 +9,7 @@ pub async fn run() -> std::io::Result<()> {
     HttpServer::new(|| {
         App::new()
             .service(hello)
+            .service(geo)
     })
     // random ip binding with random port
     // need to use the TCPListener for random port each time server start
