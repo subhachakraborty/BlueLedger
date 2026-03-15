@@ -1,5 +1,5 @@
 """
-Simple Flask API for BlueLedger Carbon Credit Pipeline.
+Flask API for BlueLedger Carbon Credit Pipeline.
 
 Endpoints:
   GET  /health  - Health check
@@ -45,6 +45,7 @@ def run_pipeline():
     try:
         data = request.get_json(force=True)
         uuid = data.get("UUID", "unknown")
+        name = data.get("name", "unknown")
         geometry = data.get("geometry")
         
         if not geometry:
@@ -91,6 +92,7 @@ def run_pipeline():
     # 4. Return new response format
     return jsonify({
         "UUID": uuid,
+        "name": name,
         "STATUS_CODE": status_code,
         "summary": {
             "NDVI_MEAN": summary.get("NDVI_MEAN"),

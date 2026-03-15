@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Main entry point for Carbon Credit Calculation System (Simplified)
+Main entry point for Carbon Credit Calculation System
 """
 
 import argparse

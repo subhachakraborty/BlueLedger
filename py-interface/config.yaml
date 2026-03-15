@@ -1,4 +1,4 @@
-# Carbon Credit Calculation Configuration (Simplified)
+# Carbon Credit Calculation Configuration
 
 sentinel_hub:
   client_id: ${SENTINEL_HUB_CLIENT_ID}
