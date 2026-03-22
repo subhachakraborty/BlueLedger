@@ -14,10 +14,13 @@ use crate::models::{
     geojson::*,
     users::*,
 };
-use hmac::{Hmac, Mac};
-use jwt::SignWithKey;
-use sha2::Sha256;
-use std::collections::BTreeMap;
+// use hmac::{Hmac, Mac};
+// use jwt::SignWithKey;
+// use sha2::Sha256;
+// use std::collections::BTreeMap;
+// use jsonwebtoken::{decode, DecodingKey, Validation, Algorithm};
+use jsonwebtoken::{encode, Header, EncodingKey};
+use crate::models::jwt::Claims;
 
 #[get("/")]
 pub async fn hello() -> impl Responder {
@@ -84,14 +87,21 @@ pub async fn login(state: Data<AppState>, payload: Json<LoginUser>) -> impl Resp
             let hashed_password = row.get("password");
             let is_valid: bool = verify(&user.password, hashed_password).unwrap_or(false);
             if is_valid{
-                // let secret = state.config.secret_key.clone();
-                let key: Hmac<Sha256> = Hmac::new_from_slice(b"secret").unwrap();
-                let mut claims = BTreeMap::new();
-                claims.insert("sub", "someone");
-                let token_str = claims.sign_with_key(&key).unwrap();
+                let secret = state.config.secret_key.clone();
+                let claims = Claims {
+                    email: user.email,
+                    password: user.password,
+                };
+
+                // This will create a JWT using HS256 as algorithm
+                let token = encode(
+                    &Header::default(),
+                    &claims,
+                    &EncodingKey::from_secret(secret.as_ref())
+                ).unwrap();
 
                 HttpResponse::Ok().json(json!({
-                    "message": format!("Bearer {}", token_str)
+                    "message": format!("Bearer {}", token)
                 }))
             }
             else {

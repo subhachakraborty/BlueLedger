@@ -15,6 +15,10 @@ use crate::middleware::auth::*;
 
 pub async fn run() -> std::io::Result<()> {
 
+    rustls::crypto::aws_lc_rs::default_provider()
+        .install_default()
+        .expect("Can't set crypto provider");
+
     env_logger::init_from_env(env_logger::Env::default().default_filter_or("debug"));
     dotenv().ok();
 

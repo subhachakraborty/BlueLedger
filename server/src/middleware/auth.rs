@@ -1,3 +1,4 @@
+use crate::models::jwt::Claims;
 use futures::future::{LocalBoxFuture, Ready, ok};
 use actix_web::{
     HttpMessage,
@@ -8,7 +9,6 @@ use actix_web::{
 };
 use jsonwebtoken::{decode, DecodingKey, Validation, Algorithm};
 use serde_json::json;
-use serde::{Deserialize, Serialize};
 
 pub struct JwtMiddleware {
     secret_key: String,
@@ -38,12 +38,6 @@ where
             secret_key: self.secret_key.clone(),
         })
     }
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct Claims {
-    pub email: String,
-    pub password: String,
 }
 
 pub struct JwtMiddlewareService<S> {
