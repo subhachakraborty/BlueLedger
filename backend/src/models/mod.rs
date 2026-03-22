@@ -1,3 +1,3 @@
 pub mod geojson;
-pub mod users;
 pub mod jwt;
+pub mod users;

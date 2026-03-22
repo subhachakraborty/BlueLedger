@@ -6,4 +6,3 @@ pub struct Config {
     pub database_url: String,
     pub secret_key: String,
 }
-

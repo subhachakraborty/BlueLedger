@@ -1,20 +1,19 @@
-mod routes;
-mod models;
-mod state;
 mod config;
 mod middleware;
+mod models;
+mod routes;
+mod state;
 
-use actix_web::{web, App, HttpServer};
-use routes::handlers::*;
-use dotenvy::dotenv;
-use sqlx::{Pool, Postgres};
-use sqlx::postgres::PgPoolOptions;
-use crate::state::state::AppState;
 use crate::config::Config;
 use crate::middleware::auth::*;
+use crate::state::state::AppState;
+use actix_web::{App, HttpServer, web};
+use dotenvy::dotenv;
+use routes::handlers::*;
+use sqlx::postgres::PgPoolOptions;
+use sqlx::{Pool, Postgres};
 
 pub async fn run() -> std::io::Result<()> {
-
     // Must run before any encode/decode. Also avoids ambiguity if crate features unify badly.
     rustls::crypto::aws_lc_rs::default_provider()
         .install_default()
@@ -30,16 +29,16 @@ pub async fn run() -> std::io::Result<()> {
         .max_connections(3)
         .connect(&config.database_url.clone())
         .await
-        {
-            Ok(pool) => {
-                println!("Database connection is successful");
-                pool
-            }
-            Err(err) => {
-                println!("Failed to connect to the database {:?}", err);
-                std::process::exit(1);
-            }
-        };
+    {
+        Ok(pool) => {
+            println!("Database connection is successful");
+            pool
+        }
+        Err(err) => {
+            println!("Failed to connect to the database {:?}", err);
+            std::process::exit(1);
+        }
+    };
 
     HttpServer::new(move || {
         App::new()
@@ -52,12 +51,12 @@ pub async fn run() -> std::io::Result<()> {
             .service(login)
             .service(
                 web::scope("")
-                .wrap(JwtMiddleware::new(config.secret_key.clone()))
-                .service(geo)
+                    .wrap(JwtMiddleware::new(config.secret_key.clone()))
+                    .service(geo),
             )
     })
     .bind(("0.0.0.0", 9000))?
-        .workers(3)
-        .run()
-        .await
+    .workers(3)
+    .run()
+    .await
 }

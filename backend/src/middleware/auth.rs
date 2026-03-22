@@ -1,13 +1,11 @@
 use crate::models::jwt::Claims;
-use futures::future::{LocalBoxFuture, Ready, ok};
 use actix_web::{
-    HttpMessage,
-    Error,
-    HttpResponse,
-    dev::{forward_ready, Service, ServiceRequest, ServiceResponse, Transform},
-    body::{EitherBody, BoxBody},
+    Error, HttpMessage, HttpResponse,
+    body::{BoxBody, EitherBody},
+    dev::{Service, ServiceRequest, ServiceResponse, Transform, forward_ready},
 };
-use jsonwebtoken::{decode, DecodingKey, Validation, Algorithm};
+use futures::future::{LocalBoxFuture, Ready, ok};
+use jsonwebtoken::{Algorithm, DecodingKey, Validation, decode};
 use serde_json::json;
 
 pub struct JwtMiddleware {
@@ -46,19 +44,18 @@ pub struct JwtMiddlewareService<S> {
 }
 
 impl<S, B> Service<ServiceRequest> for JwtMiddlewareService<S>
-where 
+where
     S: Service<ServiceRequest, Response = ServiceResponse<B>, Error = Error>,
     S::Future: 'static,
     B: 'static,
 {
     type Response = ServiceResponse<EitherBody<BoxBody, B>>;
-    type Error    = Error;
+    type Error = Error;
     type Future = LocalBoxFuture<'static, Result<Self::Response, Self::Error>>;
 
     forward_ready!(service);
 
     fn call(&self, req: ServiceRequest) -> Self::Future {
-
         let token = req
             .headers()
             .get("Authorization")
@@ -72,33 +69,27 @@ where
         let token = match token {
             Some(t) => t,
             None => {
-                let response = req
-                    .into_response(
-                        HttpResponse::Unauthorized().json(json!({
-                                "error": "Missing token"
-                        }))
-                    );
+                let response = req.into_response(HttpResponse::Unauthorized().json(json!({
+                        "error": "Missing token"
+                })));
 
-                return Box::pin(async move { Ok(response.map_into_left_body()) })
+                return Box::pin(async move { Ok(response.map_into_left_body()) });
             }
         };
 
         let claims = match decode::<Claims>(
             &token,
             &DecodingKey::from_secret(secret.as_ref()),
-            &Validation::new(Algorithm::HS256)
+            &Validation::new(Algorithm::HS256),
         ) {
             Ok(data) => data.claims,
             Err(_) => {
-                let response = req
-                    .into_response(
-                        HttpResponse::Unauthorized().json(json!({
-                                "error": "Invalid Token"
-                        }))
-                    );
+                let response = req.into_response(HttpResponse::Unauthorized().json(json!({
+                        "error": "Invalid Token"
+                })));
 
-                return Box::pin(async move { Ok(response.map_into_left_body()) })
-            },
+                return Box::pin(async move { Ok(response.map_into_left_body()) });
+            }
         };
         // inject claims into request extensions
         req.extensions_mut().insert(claims);

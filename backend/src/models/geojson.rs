@@ -1,5 +1,4 @@
-use serde::{Serialize, Deserialize};
-
+use serde::{Deserialize, Serialize};
 
 // Example data
 // {
@@ -23,7 +22,7 @@ type Coordinates = Vec<Vec<Point>>;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Geometry {
-    #[serde(rename="type")]
+    #[serde(rename = "type")]
     pub polygon_type: String,
     pub coordinates: Coordinates,
 }

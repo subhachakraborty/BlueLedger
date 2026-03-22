@@ -1,22 +1,16 @@
-use chrono::{Utc, Duration};
+use crate::models::jwt::Claims;
+use crate::models::{geojson::*, users::*};
+use crate::state::state::AppState;
+use actix_web::{
+    HttpResponse, Responder, get, post,
+    web::{Data, Json},
+};
+use bcrypt::{DEFAULT_COST, hash, verify};
+use chrono::{Duration, Utc};
+use jsonwebtoken::{EncodingKey, Header, encode};
+use serde_json::json;
 use sqlx::Row;
 use uuid::Uuid;
-use crate::state::state::AppState;
-use bcrypt::{
-    hash,
-    verify,
-    DEFAULT_COST,
-};
-use actix_web::{
-    HttpResponse, Responder, get, post, web::{Data, Json}
-};
-use serde_json::json;
-use crate::models::{
-    geojson::*,
-    users::*,
-};
-use jsonwebtoken::{encode, Header, EncodingKey};
-use crate::models::jwt::Claims;
 
 #[get("/")]
 pub async fn hello() -> impl Responder {
@@ -33,7 +27,7 @@ pub async fn signup(state: Data<AppState>, payload: Json<SignupUser>) -> impl Re
         Err(_) => {
             return HttpResponse::InternalServerError().json(json!({
                 "message": "Password hashing failed"
-            }))
+            }));
         }
     };
 
@@ -59,7 +53,7 @@ pub async fn signup(state: Data<AppState>, payload: Json<SignupUser>) -> impl Re
         })),
         Err(_) => HttpResponse::InternalServerError().json(json!({
             "message": "User creation failed",
-        }))
+        })),
     }
 }
 
@@ -82,7 +76,7 @@ pub async fn login(state: Data<AppState>, payload: Json<LoginUser>) -> impl Resp
             // verify the user with password
             let hashed_password = row.get("password");
             let is_valid: bool = verify(&user.password, hashed_password).unwrap_or(false);
-            if is_valid{
+            if is_valid {
                 let secret = state.config.secret_key.clone();
                 let claims = Claims {
                     email: user.email,
@@ -94,20 +88,20 @@ pub async fn login(state: Data<AppState>, payload: Json<LoginUser>) -> impl Resp
                 let token = encode(
                     &Header::default(),
                     &claims,
-                    &EncodingKey::from_secret(secret.as_ref())
-                ).unwrap();
+                    &EncodingKey::from_secret(secret.as_ref()),
+                )
+                .unwrap();
 
                 HttpResponse::Ok().json(json!({
                     "message": "Login Successful",
                     "token": token,
                 }))
-            }
-            else {
+            } else {
                 HttpResponse::Unauthorized().json(json!({
                     "message": "Invalid email or password"
                 }))
             }
-        },
+        }
 
         Err(_) => HttpResponse::NotFound().json(json!({
             "message": "User not found"
