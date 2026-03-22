@@ -1,5 +1,5 @@
 """
-Main carbon credit calculation pipeline (Simplified)
+Main carbon credit calculation pipeline
 """
 
 import logging
@@ -51,7 +51,7 @@ def generate_text_report(results: Dict, output_path: str = None) -> str:
 
 
 class CarbonCreditPipeline:
-    """Simplified pipeline for carbon credit calculation"""
+    """Pipeline for carbon credit calculation"""
     def __init__(self, config_path: str = 'config.yaml'):
         self.config = Config(config_path)
         self._setup_logging()
@@ -93,7 +93,7 @@ class CarbonCreditPipeline:
 
     def run(self) -> Dict:
         self.start_time = datetime.now()
-        self.logger.info("Starting Simplified Carbon Credit Pipeline")
+        self.logger.info("Starting Carbon Credit Pipeline")
         
         try:
             # Step 1: Load AOI
