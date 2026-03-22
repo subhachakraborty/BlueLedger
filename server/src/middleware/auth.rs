@@ -1,20 +1,22 @@
+use crate::models::jwt::Claims;
 use futures::future::{LocalBoxFuture, Ready, ok};
 use actix_web::{
     HttpMessage,
-    Error, 
+    Error,
     HttpResponse,
-    dev::{forward_ready, Service, ServiceRequest, ServiceResponse, Transform}
+    dev::{forward_ready, Service, ServiceRequest, ServiceResponse, Transform},
+    body::{EitherBody, BoxBody},
 };
-use std::{future::Future, pin::Pin};
-use jsonwebtoken::{decode, DecodingKey, Validation};
-pub struct JwtMiddleware {
-    secret: String,
-}
+use jsonwebtoken::{decode, DecodingKey, Validation, Algorithm};
 use serde_json::json;
 
+pub struct JwtMiddleware {
+    secret_key: String,
+}
+
 impl JwtMiddleware {
-    pub fn new(secret: impl Into<String>) -> Self {
-        Self { secret: secret.into() }
+    pub fn new(secret_key: String) -> Self {
+        Self { secret_key }
     }
 }
 
@@ -24,7 +26,7 @@ where
     S::Future: 'static,
     B: 'static,
 {
-    type Response = ServiceResponse<B>;
+    type Response = ServiceResponse<EitherBody<BoxBody, B>>;
     type Error = Error;
     type InitError = ();
     type Transform = JwtMiddlewareService<S>;
@@ -33,14 +35,14 @@ where
     fn new_transform(&self, service: S) -> Self::Future {
         ok(JwtMiddlewareService {
             service,
-            secret: self.secret.clone(),
+            secret_key: self.secret_key.clone(),
         })
     }
 }
 
 pub struct JwtMiddlewareService<S> {
     service: S,
-    secret: String,
+    secret_key: String,
 }
 
 impl<S, B> Service<ServiceRequest> for JwtMiddlewareService<S>
@@ -49,43 +51,65 @@ where
     S::Future: 'static,
     B: 'static,
 {
-    type Response = ServiceResponse<B>;
+    type Response = ServiceResponse<EitherBody<BoxBody, B>>;
     type Error    = Error;
-    // type Future   = Pin<Box<dyn Future<Output = Result<Self::Response, Self::Error>>>>;
-
     type Future = LocalBoxFuture<'static, Result<Self::Response, Self::Error>>;
 
     forward_ready!(service);
 
     fn call(&self, req: ServiceRequest) -> Self::Future {
 
-        let auth_header = req
+        let token = req
             .headers()
             .get("Authorization")
             .and_then(|v| v.to_str().ok())
-            .map(|s| s.to_owned()); // clone before req is moved
+            .and_then(|v| v.strip_prefix("Bearer "))
+            .map(|v| v.to_owned());
 
         // secret is also clone before req is moved
-        let secret = self.secret.clone();
+        let secret = self.secret_key.clone();
 
-        // verify and decode
-        // let claims_result = verify_token(auth_header, &secret);
-        // match claims_result {
-        //     Ok(claims) => {
-        //         req.extensions().insert(claims);
-        //         let fut  = self.service.call(req);
-        //         Box::pin(async move { fut.await })
-        //     }
-        //     Err(msg) => {
-        //         Box::pin(async move {
-        //             Ok(req.into_response(
-        //                     HttpResponse::Unauthorized()
-        //                     .json(json!({
-        //                         "error": msg
-        //                     }))
-        //                     .map_into_right_body()
-        //             ))
-        //         })
-            // }
-        // }
+        let token = match token {
+            Some(t) => t,
+            None => {
+                let response = req
+                    .into_response(
+                        HttpResponse::Unauthorized().json(json!({
+                                "error": "Missing token"
+                        }))
+                    );
+
+                return Box::pin(async move { Ok(response.map_into_left_body()) })
+            }
+        };
+
+        let claims = match decode::<Claims>(
+            &token,
+            &DecodingKey::from_secret(secret.as_ref()),
+            &Validation::new(Algorithm::HS256)
+        ) {
+            Ok(data) => data.claims,
+            Err(_) => {
+                let response = req
+                    .into_response(
+                        HttpResponse::Unauthorized().json(json!({
+                                "error": "Invalid Token"
+                        }))
+                    );
+
+                return Box::pin(async move { Ok(response.map_into_left_body()) })
+            },
+        };
+        // inject claims into request extensions
+        req.extensions_mut().insert(claims);
+
+        // token is valid, forward to handler
+        let fut = self.service.call(req);
+
+        Box::pin(async move {
+            let res = fut.await?;
+
+            Ok(res.map_into_right_body())
+        })
+    }
 }
