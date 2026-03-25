@@ -2,7 +2,7 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Claims {
-    pub email: String,
-    pub password: String,
+    pub username: String,
     pub exp: u64,
+    pub iat: u64,
 }

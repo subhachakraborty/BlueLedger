@@ -10,7 +10,7 @@ CREATE TABLE IF NOT EXISTS users(
     updated_at              TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
-CREATE INDEX idx_users_email ON users(email);
+CREATE INDEX idx_users_email ON users(username);
 
 CREATE TABLE IF NOT EXISTS plots (
     id                      uuid PRIMARY KEY,
@@ -32,7 +32,7 @@ CREATE TABLE IF NOT EXISTS claims(
     doc_hash                TEXT,
     doc_url                 TEXT,
     status                  TEXT NOT NULL DEFAULT 'pending'
-                            CHECK (status IN ('pending', 'approved', 'rejected', 'disputed'),
+                            CHECK (status IN ('pending', 'approved', 'rejected', 'disputed')),
     submitted_at            TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     resolved_at             TIMESTAMPTZ
 );
@@ -43,7 +43,7 @@ CREATE INDEX idx_claims_status ON claims(status);
 
 CREATE TABLE IF NOT EXISTS analysis_results (
     id                      UUID PRIMARY KEY,
-    claim_id                UUID NOT NULL REFERENCES calims(id),
+    claim_id                UUID NOT NULL REFERENCES claims(id),
     ndvi_before             FLOAT,
     ndvi_after              FLOAT,
     ndvi_delta              FLOAT,

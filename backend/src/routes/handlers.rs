@@ -20,8 +20,10 @@ pub async fn hello() -> impl Responder {
 #[post("/signup")]
 pub async fn signup(state: Data<AppState>, payload: Json<SignupUser>) -> impl Responder {
     let user = payload.into_inner();
-    // hash the password
+
+    // Creating the payload
     let id = Uuid::new_v4();
+    let fullname: String = format!("{} {}", user.firstname, user.lastname);
     let hashed_password = match hash(user.password, DEFAULT_COST) {
         Ok(value) => value,
         Err(_) => {
@@ -33,15 +35,14 @@ pub async fn signup(state: Data<AppState>, payload: Json<SignupUser>) -> impl Re
 
     let inserted_row = sqlx::query(
         r#"
-        INSERT INTO users (id, firstname, lastname, email, password)
-        VALUES ($1, $2, $3, $4, $5)
+        INSERT INTO users (id, fullname, username, password_hash)
+        VALUES ($1, $2, $3, $4)
         RETURNING id
         "#,
     )
     .bind(id)
-    .bind(user.firstname)
-    .bind(user.lastname)
-    .bind(user.email)
+    .bind(fullname)
+    .bind(user.username)
     .bind(hashed_password)
     .fetch_one(&state.db)
     .await;
@@ -64,24 +65,24 @@ pub async fn login(state: Data<AppState>, payload: Json<LoginUser>) -> impl Resp
     // check if the user exists
     let result = sqlx::query(
         r#"
-        SELECT email, password from users
-        WHERE email=$1
+        SELECT username, password_hash from users
+        WHERE username=$1
         "#,
     )
-    .bind(&user.email)
+    .bind(&user.username)
     .fetch_one(&state.db)
     .await;
     match result {
         Ok(row) => {
             // verify the user with password
-            let hashed_password = row.get("password");
+            let hashed_password = row.get("password_hash");
             let is_valid: bool = verify(&user.password, hashed_password).unwrap_or(false);
             if is_valid {
                 let secret = state.config.secret_key.clone();
                 let claims = Claims {
-                    email: user.email,
-                    password: user.password,
+                    username: user.username,
                     exp: (Utc::now() + Duration::hours(24)).timestamp() as u64,
+                    iat: Utc::now().timestamp() as u64,
                 };
 
                 // This will create a JWT using HS256 as algorithm
@@ -117,3 +118,8 @@ pub async fn geo(geojson: Json<PolygonGeoJson>) -> impl Responder {
         "Geometry": geojson.geometry,
     }))
 }
+
+// #[post("/plots")]
+// pub async fn register_plot() -> impl Responder {
+//
+// }
